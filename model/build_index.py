@@ -4,19 +4,19 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import pickle
 
-# 1) Charger le dataset
+#
 df = pd.read_csv("qa_uniform.csv")
 df = df.dropna(subset=["response", "context"])
 
 # Texte qui servira de base de connaissance (tu peux adapter)
-df["kb_text"] = df["context"]  # ou question + context si tu veux
+df["kb_text"] = df["question"] + " " + df["context"]
 
 texts = df["kb_text"].tolist()
 
-# 2) Modèle d'embeddings (open-source, pas un LLM complet)
+# Modèle d'embeddings (open-source, pas un LLM complet)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# 3) Encoder tous les textes en vecteurs
+# Encoder tous les textes en vecteurs
 embeddings = model.encode(
     texts,
     batch_size=128,
@@ -25,15 +25,17 @@ embeddings = model.encode(
     normalize_embeddings=True,  # important pour la similarité cosinus
 )
 
+embeddings = np.ascontiguousarray(embeddings, dtype=np.float32)
+
 d = embeddings.shape[1]  # dimension des vecteurs
 
-# 4) Construire l'index FAISS (Inner Product ≈ cosinus car normalisé)
+# Construire l'index FAISS (Inner Product ≈ cosinus car normalisé)
 index = faiss.IndexFlatIP(d)
-index.add(embeddings)
+index.add(embeddings) # type: ignore[arg-type]
 
 print("Nb de vecteurs dans l'index :", index.ntotal)
 
-# 5) Sauvegarder l'index et le dataframe minimal
+# Sauvegarder l'index et le dataframe minimal
 faiss.write_index(index, "kb.index")
 df[["question", "context", "response"]].to_parquet("kb_rows.parquet")
 
