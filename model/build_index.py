@@ -5,10 +5,10 @@ import faiss
 import pickle
 
 #
-df = pd.read_csv("qa_uniform.csv")
+df = pd.read_csv("qa_sports.csv")
 df = df.dropna(subset=["response", "context"])
 
-# Texte qui servira de base de connaissance (tu peux adapter)
+# Texte qui servira de base de connaissance
 df["kb_text"] = df["question"] + " " + df["context"]
 
 texts = df["kb_text"].tolist()
